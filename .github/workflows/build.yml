@@ -1,0 +1,26 @@
+name: Compile Mod Menu
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v3
+      with:
+        ndk-version: r25b
+        add-to-path: true
+
+    - name: Build Native Library
+      run: ndk-build
+
+    - name: Upload Compiled .so File
+      uses: actions/upload-artifact@v4
+      with:
+        name: libModMenu
+        path: libs/
