@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <dlfcn.h>
-#include "And64InlineHook/And64InlineHook.hpp"
+#include "And64InlineHook.hpp"
 
 uintptr_t libBase = 0; 
 #define OFFSET_RANDOM_FRUIT 0x01daa2b0
@@ -43,7 +43,6 @@ void* hack_thread(void*) {
         }
     }
 
-    // Use A64HookFunction for ARM64 inline hooking
     A64HookFunction(reinterpret_cast<void*>(libBase + OFFSET_RANDOM_FRUIT), 
                     reinterpret_cast<void*>(Hooked_RandomFruit), 
                     reinterpret_cast<void**>(&Old_RandomFruit));
