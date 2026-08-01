@@ -4,36 +4,40 @@
 #include "Includes/KittyMemory/MemoryPatch.h" 
 #include "Includes/Logger.h"
 
-// Memory offset we found in Ghidra for Fruit::RandomFruit
-uintptr_t libBase = 0; // Automatically resolved by Zygisk/Mod template
+// Memory offset found in Ghidra for Fruit::RandomFruit
+uintptr_t libBase = 0; 
 #define OFFSET_RANDOM_FRUIT 0x01daa2b0
+
+// Global flag to signal our bottom-spawning variant state
+bool g_BottomSpawnFrenzyActive = false;
 
 // Original function pointer
 unsigned long (*Old_RandomFruit)(void* instance, bool param_1);
 
-// Hooked function to modify fruit selection
+// Hooked function to modify fruit selection and split frenzy variants
 unsigned long Hooked_RandomFruit(void* instance, bool param_1) {
     // Call the game's original random fruit logic
     unsigned long fruitID = Old_RandomFruit(instance, param_1);
 
-    // Define your Frenzy Banana ID (typically 5 or whichever ID it is in your game)
-    int frenzyBananaID = 5; 
+    int frenzyBananaID = 5; // Adjust to match your game's internal frenzy ID if necessary
 
-    // --- 2x SPAWN RATE LOGIC ---
-    // If it's not a frenzy banana, give it a balanced chance to turn into one
+    // Step 1: Boost general Frenzy Banana frequency (approx. 15% chance boost)
     if (fruitID != frenzyBananaID) {
-        if (rand() % 100 < 15) { // Roughly increases spawn frequency
+        if (rand() % 100 < 15) {
             fruitID = frenzyBananaID;
         }
     }
 
-    // --- 50% NEW BANANA VARIANT LOGIC ---
-    // When a frenzy banana spawns, apply a 50% chance modifier 
+    // Step 2: When a Frenzy Banana spawns, apply a 50% split for the bottom-spawning variant
     if (fruitID == frenzyBananaID) {
         if (rand() % 2 == 0) {
-            // This is where your custom bottom-spawning logic variant triggers
-            // You can route or modify behavior here if needed
+            g_BottomSpawnFrenzyActive = true;
+            LOGI("Custom Variant Triggered: Bottom-Spawning Frenzy Banana!");
+        } else {
+            g_BottomSpawnFrenzyActive = false;
         }
+    } else {
+        g_BottomSpawnFrenzyActive = false;
     }
 
     return fruitID;
@@ -41,7 +45,6 @@ unsigned long Hooked_RandomFruit(void* instance, bool param_1) {
 
 // Setup the hook when the library loads
 void* hack_thread(void*) {
-    // Wait for the game library to load into memory
     while (libBase == 0) {
         libBase = KittyMemory::getLibraryBase("libmortargame.so");
         sleep(1);
@@ -52,7 +55,7 @@ void* hack_thread(void*) {
     // Apply the hook to Fruit::RandomFruit
     MSHookFunction((void*)(libBase + OFFSET_RANDOM_FRUIT), (void*)Hooked_RandomFruit, (void**)&Old_RandomFruit);
     
-    LOGI("Successfully hooked Fruit::RandomFruit!");
+    LOGI("Successfully hooked Fruit::RandomFruit with 50/50 split variant logic!");
     return NULL;
 }
 
