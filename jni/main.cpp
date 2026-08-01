@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <substrate.h>
 
 uintptr_t libBase = 0; 
 #define OFFSET_RANDOM_FRUIT 0x01daa2b0
@@ -13,17 +14,14 @@ unsigned long (*Old_RandomFruit)(void* instance, bool param_1);
 unsigned long Hooked_RandomFruit(void* instance, bool param_1) {
     unsigned long fruitID = Old_RandomFruit(instance, param_1);
 
-    // Replace with your verified Frenzy Banana ID if needed
     int frenzyBananaID = 5; 
 
-    // Boost general Frenzy Banana frequency (approx. 15% chance boost)
     if (fruitID != frenzyBananaID) {
         if (rand() % 100 < 15) {
             fruitID = frenzyBananaID;
         }
     }
 
-    // 50/50 split variant logic for bottom-spawning frenzy
     if (fruitID == frenzyBananaID) {
         if (rand() % 2 == 0) {
             g_BottomSpawnFrenzyActive = true;
@@ -45,7 +43,6 @@ void* hack_thread(void*) {
         }
     }
 
-    // Apply the hook function
     MSHookFunction(reinterpret_cast<void*>(libBase + OFFSET_RANDOM_FRUIT), 
                    reinterpret_cast<void*>(Hooked_RandomFruit), 
                    reinterpret_cast<void**>(&Old_RandomFruit));
