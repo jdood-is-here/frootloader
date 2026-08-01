@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <dlfcn.h>
-#include <substrate.h>
+#include "Substrate/substrate.h"
 
 uintptr_t libBase = 0; 
 #define OFFSET_RANDOM_FRUIT 0x01daa2b0
