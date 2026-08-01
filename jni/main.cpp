@@ -1,52 +1,27 @@
 #include <jni.h>
 #include <string>
-#include <cstdlib>
 #include <unistd.h>
-#include <dlfcn.h>
-#include "And64InlineHook.hpp"
+#include "KittyMemory/MemoryPatch.h"
+#include "Logger.h"
 
-uintptr_t libBase = 0; 
-#define OFFSET_RANDOM_FRUIT 0x01daa2b0
-
-bool g_BottomSpawnFrenzyActive = false;
-unsigned long (*Old_RandomFruit)(void* instance, bool param_1);
-
-unsigned long Hooked_RandomFruit(void* instance, bool param_1) {
-    unsigned long fruitID = Old_RandomFruit(instance, param_1);
-
-    int frenzyBananaID = 5; 
-
-    if (fruitID != frenzyBananaID) {
-        if (rand() % 100 < 15) {
-            fruitID = frenzyBananaID;
-        }
-    }
-
-    if (fruitID == frenzyBananaID) {
-        if (rand() % 2 == 0) {
-            g_BottomSpawnFrenzyActive = true;
-        } else {
-            g_BottomSpawnFrenzyActive = false;
-        }
-    } else {
-        g_BottomSpawnFrenzyActive = false;
-    }
-
-    return fruitID;
-}
+uintptr_t libBase = 0;
 
 void* hack_thread(void*) {
+    // Wait for libmortargame.so to load into memory
     while (libBase == 0) {
-        libBase = reinterpret_cast<uintptr_t>(dlopen("libmortargame.so", RTLD_NOLOAD));
+        libBase = KittyMemory::getLibraryBase("libmortargame.so");
         if (libBase == 0) {
             sleep(1);
         }
     }
 
-    A64HookFunction(reinterpret_cast<void*>(libBase + OFFSET_RANDOM_FRUIT), 
-                    reinterpret_cast<void*>(Hooked_RandomFruit), 
-                    reinterpret_cast<void**>(&Old_RandomFruit));
-    
+    LOGI("libmortargame.so base address found at: %p", (void*)libBase);
+
+    // Add your memory patches here using KittyMemory if needed, for example:
+    // MemoryPatch frenzyPatch = MemoryPatch::createWithHex(libBase + 0x1DAA2B0, "00 00 A0 E3");
+    // frenzyPatch.Modify();
+
+    LOGI("Mod template initialized successfully!");
     return NULL;
 }
 
